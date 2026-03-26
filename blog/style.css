@@ -1,0 +1,317 @@
+/* ========================================
+   8-BIT BLOG — Full Pixel Art Theme
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --px: 4px; /* base pixel unit */
+  --bg: #fff;
+  --fg: #000;
+  --grey: #888;
+}
+
+html {
+  background: var(--bg);
+  image-rendering: pixelated;
+}
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  line-height: 2;
+  color: var(--fg);
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+/* ---- pixel border utility ---- */
+.pixel-border {
+  border: var(--px) solid var(--fg);
+  box-shadow:
+    var(--px) var(--px) 0 var(--fg),
+    calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--fg),
+    var(--px) calc(var(--px) * -1) 0 var(--fg),
+    calc(var(--px) * -1) var(--px) 0 var(--fg);
+}
+
+/* ---- header ---- */
+header {
+  text-align: center;
+  padding: 24px 12px;
+  margin-bottom: 32px;
+  border: var(--px) solid var(--fg);
+  box-shadow:
+    var(--px) var(--px) 0 var(--fg),
+    calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--fg),
+    var(--px) calc(var(--px) * -1) 0 var(--fg),
+    calc(var(--px) * -1) var(--px) 0 var(--fg);
+  position: relative;
+}
+
+header::before,
+header::after {
+  content: '■ ■ ■';
+  display: block;
+  font-size: 6px;
+  letter-spacing: 4px;
+  color: var(--fg);
+}
+
+header::before { margin-bottom: 12px; }
+header::after  { margin-top: 12px; }
+
+header h1 {
+  font-size: 16px;
+  letter-spacing: 2px;
+  line-height: 1.6;
+}
+
+header h1 a {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+header .subtitle {
+  font-size: 7px;
+  color: var(--grey);
+  margin-top: 8px;
+}
+
+/* ---- dither separator ---- */
+.dither {
+  text-align: center;
+  font-size: 5px;
+  letter-spacing: 3px;
+  color: var(--grey);
+  margin: 24px 0;
+  overflow: hidden;
+  word-break: break-all;
+  line-height: 1.2;
+}
+
+/* ---- post list (homepage) ---- */
+.post-list {
+  list-style: none;
+}
+
+.post-list li {
+  padding: 12px;
+  border-bottom: var(--px) solid var(--fg);
+  position: relative;
+}
+
+.post-list li:first-child {
+  border-top: var(--px) solid var(--fg);
+}
+
+.post-list li::before {
+  content: '►';
+  position: absolute;
+  left: 12px;
+  top: 14px;
+  font-size: 8px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.post-list li:hover::before {
+  opacity: 1;
+}
+
+.post-list li:hover {
+  padding-left: 28px;
+}
+
+.post-list a {
+  color: var(--fg);
+  text-decoration: none;
+  display: block;
+}
+
+.post-list .post-title {
+  font-size: 10px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.post-list .post-date {
+  font-size: 7px;
+  color: var(--grey);
+}
+
+/* ---- article page ---- */
+article {
+  padding: 20px 16px;
+  border: var(--px) solid var(--fg);
+  box-shadow:
+    var(--px) var(--px) 0 var(--fg),
+    calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--fg),
+    var(--px) calc(var(--px) * -1) 0 var(--fg),
+    calc(var(--px) * -1) var(--px) 0 var(--fg);
+}
+
+article .post-meta {
+  font-size: 7px;
+  color: var(--grey);
+  margin-bottom: 20px;
+}
+
+article h1 {
+  font-size: 14px;
+  margin-bottom: 4px;
+  line-height: 1.8;
+}
+
+article h2 {
+  font-size: 11px;
+  margin: 24px 0 12px;
+  line-height: 1.8;
+}
+
+article h3 {
+  font-size: 10px;
+  margin: 20px 0 8px;
+}
+
+article p {
+  margin-bottom: 16px;
+}
+
+article blockquote {
+  border-left: calc(var(--px) * 2) solid var(--fg);
+  padding: 8px 12px;
+  margin: 16px 0;
+  font-style: normal;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.03) 3px,
+      rgba(0,0,0,0.03) 4px
+    );
+}
+
+article code {
+  background: var(--fg);
+  color: var(--bg);
+  padding: 2px 6px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+}
+
+article pre {
+  background: var(--fg);
+  color: var(--bg);
+  padding: 12px;
+  margin: 16px 0;
+  overflow-x: auto;
+  font-size: 8px;
+  line-height: 2.2;
+}
+
+article pre code {
+  background: none;
+  padding: 0;
+}
+
+article ul, article ol {
+  margin: 12px 0 16px 20px;
+}
+
+article li {
+  margin-bottom: 8px;
+}
+
+article strong {
+  color: var(--fg);
+}
+
+article a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+article img {
+  max-width: 100%;
+  image-rendering: pixelated;
+  border: var(--px) solid var(--fg);
+}
+
+article hr {
+  border: none;
+  border-top: var(--px) dashed var(--fg);
+  margin: 24px 0;
+}
+
+/* ---- back link ---- */
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 8px;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.back::before {
+  content: '◄ ';
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+/* ---- footer ---- */
+footer {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 6px;
+  color: var(--grey);
+}
+
+footer::before {
+  content: '■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■';
+  display: block;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  font-size: 4px;
+}
+
+/* ---- scanline overlay (subtle) ---- */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.015) 2px,
+      rgba(0,0,0,0.015) 4px
+    );
+  z-index: 9999;
+}
+
+/* ---- cursor blink for fun ---- */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blink {
+  animation: blink 1s step-start infinite;
+}

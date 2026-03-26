@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADMIN — 8-bit Blog</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --px: 4px; --bg: #fff; --fg: #000; --grey: #888; }
+  html { background: var(--bg); }
+
+  body {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    line-height: 2;
+    color: var(--fg);
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 24px 16px 64px;
+  }
+
+  body::after {
+    content: '';
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.015) 2px, rgba(0,0,0,0.015) 4px);
+    z-index: 9999;
+  }
+
+  header {
+    text-align: center;
+    padding: 16px 12px;
+    margin-bottom: 24px;
+    border: var(--px) solid var(--fg);
+    box-shadow: var(--px) var(--px) 0 var(--fg), calc(var(--px)*-1) calc(var(--px)*-1) 0 var(--fg), var(--px) calc(var(--px)*-1) 0 var(--fg), calc(var(--px)*-1) var(--px) 0 var(--fg);
+    position: relative;
+  }
+  header h1 { font-size: 14px; letter-spacing: 2px; }
+  header p  { font-size: 7px; color: var(--grey); margin-top: 6px; }
+
+  .gear-btn {
+    position: absolute;
+    top: 10px; right: 12px;
+    background: none; border: none;
+    font-size: 16px; cursor: pointer;
+    color: var(--fg);
+    font-family: 'Press Start 2P', monospace;
+    padding: 4px;
+  }
+  .gear-btn:hover { color: var(--grey); }
+
+  /* ---- settings overlay ---- */
+  .settings-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.97);
+    z-index: 10000;
+    overflow-y: auto;
+  }
+  .settings-overlay.open { display: flex; justify-content: center; align-items: flex-start; }
+
+  .settings-panel {
+    font-family: 'Press Start 2P', monospace;
+    max-width: 500px;
+    width: 100%;
+    padding: 32px 20px;
+    margin-top: 40px;
+  }
+  .settings-panel h2 {
+    font-size: 12px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .settings-panel .settings-sub {
+    font-size: 7px;
+    color: var(--grey);
+    text-align: center;
+    margin-bottom: 24px;
+    line-height: 2.2;
+  }
+  .settings-panel .settings-sub a {
+    color: var(--fg);
+  }
+  .settings-panel .field { margin-bottom: 14px; }
+  .settings-panel label {
+    display: block;
+    font-size: 7px;
+    margin-bottom: 5px;
+    color: var(--grey);
+    font-family: 'Press Start 2P', monospace;
+  }
+  .settings-panel input[type="text"],
+  .settings-panel input[type="password"] {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 8px 10px;
+    border: var(--px) solid var(--fg);
+    background: var(--bg);
+    color: var(--fg);
+    width: 100%;
+    outline: none;
+  }
+  .settings-panel input:focus { box-shadow: var(--px) var(--px) 0 var(--fg); }
+  .settings-panel .hint {
+    font-size: 6px;
+    color: var(--grey);
+    margin-top: 3px;
+    line-height: 2;
+  }
+  .settings-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border: 2px solid var(--fg);
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .status-dot.connected { background: var(--fg); }
+
+  /* ---- form fields ---- */
+  .field { margin-bottom: 16px; }
+  label {
+    display: block;
+    font-size: 8px;
+    margin-bottom: 6px;
+    color: var(--grey);
+  }
+
+  input[type="text"], input[type="date"] {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 8px 10px;
+    border: var(--px) solid var(--fg);
+    background: var(--bg);
+    color: var(--fg);
+    width: 100%;
+    outline: none;
+  }
+  input:focus { box-shadow: var(--px) var(--px) 0 var(--fg); }
+
+  /* ---- tabs ---- */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0;
+  }
+  .tab {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 8px 16px;
+    border: var(--px) solid var(--fg);
+    border-bottom: none;
+    background: var(--bg);
+    color: var(--grey);
+    cursor: pointer;
+    position: relative;
+    top: var(--px);
+  }
+  .tab.active {
+    color: var(--fg);
+    background: var(--bg);
+    z-index: 2;
+    border-bottom: var(--px) solid var(--bg);
+  }
+
+  /* ---- editor & preview ---- */
+  .editor-wrap {
+    border: var(--px) solid var(--fg);
+    min-height: 350px;
+    position: relative;
+  }
+
+  #editor {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    line-height: 2.2;
+    padding: 16px;
+    width: 100%;
+    min-height: 350px;
+    border: none;
+    resize: vertical;
+    background: var(--bg);
+    color: var(--fg);
+    outline: none;
+  }
+
+  #preview {
+    padding: 16px;
+    display: none;
+    font-size: 10px;
+    line-height: 2;
+  }
+  #preview h1 { font-size: 14px; margin-bottom: 12px; line-height: 1.8; }
+  #preview h2 { font-size: 11px; margin: 20px 0 8px; line-height: 1.8; }
+  #preview h3 { font-size: 10px; margin: 16px 0 6px; }
+  #preview p  { margin-bottom: 14px; }
+  #preview blockquote {
+    border-left: calc(var(--px)*2) solid var(--fg);
+    padding: 8px 12px;
+    margin: 12px 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px);
+  }
+  #preview code {
+    background: var(--fg); color: var(--bg);
+    padding: 2px 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+  }
+  #preview pre {
+    background: var(--fg); color: var(--bg);
+    padding: 12px; margin: 12px 0;
+    overflow-x: auto; font-size: 8px; line-height: 2.2;
+  }
+  #preview pre code { background: none; padding: 0; }
+  #preview strong { color: var(--fg); }
+  #preview ul, #preview ol { margin: 10px 0 14px 20px; }
+  #preview li { margin-bottom: 6px; }
+  #preview a { color: var(--fg); text-decoration: underline; }
+  #preview hr { border: none; border-top: var(--px) dashed var(--fg); margin: 20px 0; }
+
+  /* ---- buttons ---- */
+  .actions { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+  button {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 10px 20px;
+    border: var(--px) solid var(--fg);
+    background: var(--fg);
+    color: var(--bg);
+    cursor: pointer;
+  }
+  button:hover {
+    box-shadow: var(--px) var(--px) 0 var(--fg);
+    transform: translate(calc(var(--px)*-1), calc(var(--px)*-1));
+  }
+  button.secondary {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* ---- status ---- */
+  .status {
+    font-size: 7px;
+    color: var(--grey);
+    margin-top: 12px;
+    min-height: 20px;
+  }
+  .status.error { color: var(--fg); }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .blink { animation: blink 1s step-start infinite; }
+
+  /* ---- help ---- */
+  .help {
+    margin-top: 32px;
+    font-size: 7px;
+    color: var(--grey);
+    line-height: 2.4;
+    border-top: var(--px) dashed var(--fg);
+    padding-top: 16px;
+  }
+  .help h3 { font-size: 8px; color: var(--fg); margin-bottom: 8px; }
+  .help code {
+    background: var(--fg); color: var(--bg);
+    padding: 1px 4px; font-size: 7px;
+  }
+
+  /* ---- mobile ---- */
+  @media (max-width: 600px) {
+    body { padding: 12px 10px 48px; }
+    header { padding: 12px 8px; margin-bottom: 16px; }
+    header h1 { font-size: 12px; }
+    .gear-btn { top: 8px; right: 8px; font-size: 14px; }
+    #editor { min-height: 250px; font-size: 8px; padding: 12px; }
+    .actions { flex-direction: column; }
+    .actions button { width: 100%; text-align: center; }
+    .tab { padding: 8px 10px; font-size: 7px; }
+    .settings-panel { padding: 20px 14px; margin-top: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>■ ADMIN ■</h1>
+  <p>write. preview. publish.</p>
+  <button class="gear-btn" onclick="toggleSettings()" title="Settings">⚙</button>
+</header>
+
+<!-- Settings Overlay -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-panel">
+    <h2>⚙ SETUP</h2>
+    <div class="settings-sub">
+      Connect to GitHub to publish from anywhere.<br>
+      <a href="https://github.com/settings/tokens?type=beta" target="_blank">Create a fine-grained token</a> with <strong>Contents</strong> read+write permission.
+    </div>
+
+    <div class="field">
+      <label>GITHUB TOKEN</label>
+      <input type="password" id="settingToken" placeholder="github_pat_...">
+      <div class="hint">Fine-grained PAT — stored only in this browser</div>
+    </div>
+    <div class="field">
+      <label>REPO OWNER</label>
+      <input type="text" id="settingOwner" placeholder="axiomfolly">
+    </div>
+    <div class="field">
+      <label>REPO NAME</label>
+      <input type="text" id="settingRepo" placeholder="axiomfolly.net">
+    </div>
+    <div class="field">
+      <label>BRANCH</label>
+      <input type="text" id="settingBranch" placeholder="main">
+    </div>
+    <div class="field">
+      <label>POSTS PATH IN REPO</label>
+      <input type="text" id="settingPath" placeholder="blog/posts">
+      <div class="hint">Folder path to .md files (no leading/trailing slash)</div>
+    </div>
+
+    <div class="settings-actions">
+      <button onclick="saveSettings()">SAVE</button>
+      <button class="secondary" onclick="testConnection()">TEST</button>
+      <button class="secondary" onclick="toggleSettings()">CLOSE</button>
+    </div>
+    <div class="status" id="settingsStatus"></div>
+  </div>
+</div>
+
+<!-- Title & Date -->
+<div class="field">
+  <label>TITLE</label>
+  <input type="text" id="title" placeholder="My New Post">
+</div>
+<div class="field">
+  <label>DATE</label>
+  <input type="date" id="date">
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-target="editor" onclick="switchTab('editor')">MARKDOWN</div>
+  <div class="tab" data-target="preview" onclick="switchTab('preview')">PREVIEW</div>
+</div>
+
+<!-- Editor / Preview -->
+<div class="editor-wrap">
+  <textarea id="editor" placeholder="Write your post in markdown...
+
+> &quot;A great quote&quot; — Someone
+
+## A heading
+
+Some **bold** and *italic* text."></textarea>
+  <div id="preview"></div>
+</div>
+
+<!-- Actions -->
+<div class="actions">
+  <button onclick="publishPost()" id="publishBtn">► PUBLISH</button>
+  <button class="secondary" onclick="saveFile()">SAVE .MD</button>
+  <button class="secondary" onclick="clearAll()">CLEAR</button>
+</div>
+
+<div class="status" id="status"><span class="blink">_</span> ready</div>
+
+<!-- Quick reference -->
+<div class="help">
+  <h3>QUICK REFERENCE</h3>
+  <p><code># Heading 1</code> &nbsp; <code>## Heading 2</code> &nbsp; <code>### Heading 3</code></p>
+  <p><code>**bold**</code> &nbsp; <code>*italic*</code> &nbsp; <code>`code`</code></p>
+  <p><code>> blockquote</code> &nbsp; <code>- list item</code> &nbsp; <code>[link](url)</code></p>
+  <p><code>---</code> horizontal rule &nbsp; <code>![alt](image.png)</code></p>
+</div>
+
+<script>
+const SETTINGS_KEY = 'axiomfolly-blog-settings';
+
+function getSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+  } catch { return {}; }
+}
+
+function toggleSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  const isOpen = overlay.classList.contains('open');
+  if (isOpen) {
+    overlay.classList.remove('open');
+  } else {
+    const s = getSettings();
+    document.getElementById('settingToken').value = s.token || '';
+    document.getElementById('settingOwner').value = s.owner || '';
+    document.getElementById('settingRepo').value = s.repo || '';
+    document.getElementById('settingBranch').value = s.branch || 'main';
+    document.getElementById('settingPath').value = s.path || 'blog/posts';
+    overlay.classList.add('open');
+  }
+}
+
+function saveSettings() {
+  const settings = {
+    token:  document.getElementById('settingToken').value.trim(),
+    owner:  document.getElementById('settingOwner').value.trim(),
+    repo:   document.getElementById('settingRepo').value.trim(),
+    branch: document.getElementById('settingBranch').value.trim() || 'main',
+    path:   document.getElementById('settingPath').value.trim() || 'blog/posts',
+  };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  document.getElementById('settingsStatus').innerHTML = '✓ saved';
+  updatePublishBtn();
+}
+
+async function testConnection() {
+  const s = {
+    token: document.getElementById('settingToken').value.trim(),
+    owner: document.getElementById('settingOwner').value.trim(),
+    repo:  document.getElementById('settingRepo').value.trim(),
+  };
+  const statusEl = document.getElementById('settingsStatus');
+  if (!s.token || !s.owner || !s.repo) {
+    statusEl.innerHTML = '⚠ fill in token, owner & repo';
+    return;
+  }
+  statusEl.innerHTML = '⏳ testing...';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${s.owner}/${s.repo}`, {
+      headers: { 'Authorization': `Bearer ${s.token}`, 'Accept': 'application/vnd.github+json' }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      statusEl.innerHTML = `✓ connected to <strong>${data.full_name}</strong>`;
+    } else if (res.status === 404) {
+      statusEl.innerHTML = '✗ repo not found (check owner/name, or token permissions)';
+    } else if (res.status === 401) {
+      statusEl.innerHTML = '✗ bad token';
+    } else {
+      statusEl.innerHTML = `✗ HTTP ${res.status}`;
+    }
+  } catch (e) {
+    statusEl.innerHTML = `✗ ${e.message}`;
+  }
+}
+
+function updatePublishBtn() {
+  const s = getSettings();
+  const btn = document.getElementById('publishBtn');
+  const connected = s.token && s.owner && s.repo;
+  btn.textContent = connected ? '► PUBLISH' : '► PUBLISH (setup ⚙)';
+}
+
+// ─── Tab switching ───────────────────────────────
+function switchTab(target) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-target="${target}"]`).classList.add('active');
+
+  if (target === 'editor') {
+    document.getElementById('editor').style.display = 'block';
+    document.getElementById('preview').style.display = 'none';
+  } else {
+    document.getElementById('editor').style.display = 'none';
+    document.getElementById('preview').style.display = 'block';
+    renderPreview();
+  }
+}
+
+// ─── Minimal markdown renderer (matches build.py) ──
+function renderPreview() {
+  const md = document.getElementById('editor').value;
+  document.getElementById('preview').innerHTML = mdToHtml(md);
+}
+
+function mdToHtml(md) {
+  const lines = md.split('\n');
+  let out = [];
+  let inCode = false;
+  let inList = false;
+  let inBq = false;
+  let bqLines = [];
+
+  function flushBq() {
+    if (inBq) {
+      out.push('<blockquote><p>' + inlineFormat(bqLines.join('<br>')) + '</p></blockquote>');
+      inBq = false;
+      bqLines = [];
+    }
+  }
+  function flushList() {
+    if (inList) { out.push('</ul>'); inList = false; }
+  }
+
+  for (const line of lines) {
+    if (line.trim().startsWith('```')) {
+      if (inCode) { out.push('</code></pre>'); inCode = false; }
+      else { flushBq(); flushList(); out.push('<pre><code>'); inCode = true; }
+      continue;
+    }
+    if (inCode) { out.push(escHtml(line)); continue; }
+    if (line.trim() === '') { flushBq(); flushList(); continue; }
+
+    if (line.startsWith('>')) {
+      flushList();
+      inBq = true;
+      bqLines.push(line.slice(1).trim());
+      continue;
+    } else { flushBq(); }
+
+    let m = line.match(/^(#{1,6})\s+(.*)/);
+    if (m) { flushList(); out.push(`<h${m[1].length}>${inlineFormat(m[2])}</h${m[1].length}>`); continue; }
+
+    if (/^(-{3,}|_{3,}|\*{3,})$/.test(line.trim())) { flushList(); out.push('<hr>'); continue; }
+
+    m = line.match(/^[-*]\s+(.*)/);
+    if (m) { if (!inList) { out.push('<ul>'); inList = true; } out.push(`<li>${inlineFormat(m[1])}</li>`); continue; }
+
+    flushList();
+    out.push(`<p>${inlineFormat(line)}</p>`);
+  }
+  flushBq(); flushList();
+  if (inCode) out.push('</code></pre>');
+  return out.join('\n');
+}
+
+function inlineFormat(t) {
+  t = t.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;image-rendering:pixelated;border:4px solid #000">');
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  t = t.replace(/_(.+?)_/g, '<em>$1</em>');
+  t = t.replace(/`(.+?)`/g, (_, c) => `<code>${escHtml(c)}</code>`);
+  return t;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Publish to GitHub ───────────────────────────
+async function publishPost() {
+  const s = getSettings();
+  if (!s.token || !s.owner || !s.repo) {
+    toggleSettings();
+    return;
+  }
+
+  const title = document.getElementById('title').value.trim();
+  if (!title) { setStatus('⚠ enter a title first'); return; }
+
+  const date = document.getElementById('date').value || new Date().toISOString().slice(0, 10);
+  const body = document.getElementById('editor').value;
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const content = `---\ntitle: ${title}\ndate: ${date}\n---\n\n${body}\n`;
+  const b64 = btoa(unescape(encodeURIComponent(content)));
+  const filePath = `${s.path}/${slug}.md`;
+
+  setStatus('⏳ publishing...');
+  document.getElementById('publishBtn').disabled = true;
+
+  try {
+    let sha = null;
+    try {
+      const existing = await fetch(
+        `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${filePath}?ref=${s.branch}`,
+        { headers: { 'Authorization': `Bearer ${s.token}`, 'Accept': 'application/vnd.github+json' } }
+      );
+      if (existing.ok) {
+        const data = await existing.json();
+        sha = data.sha;
+      }
+    } catch (_) {}
+
+    const payload = {
+      message: sha ? `Update post: ${title}` : `Add post: ${title}`,
+      content: b64,
+      branch: s.branch
+    };
+    if (sha) payload.sha = sha;
+
+    const res = await fetch(
+      `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${filePath}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${s.token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    setStatus(`✓ published <strong>${slug}.md</strong> — site deploys in ~30s`);
+  } catch (e) {
+    setStatus(`✗ ${e.message}`, true);
+  } finally {
+    document.getElementById('publishBtn').disabled = false;
+  }
+}
+
+function setStatus(msg, isError) {
+  const el = document.getElementById('status');
+  el.innerHTML = msg;
+  el.className = 'status' + (isError ? ' error' : '');
+}
+
+// ─── Save as .md file (fallback) ─────────────────
+function saveFile() {
+  const title = document.getElementById('title').value.trim() || 'untitled';
+  const date  = document.getElementById('date').value || new Date().toISOString().slice(0,10);
+  const body  = document.getElementById('editor').value;
+
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const content = `---\ntitle: ${title}\ndate: ${date}\n---\n\n${body}\n`;
+
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${slug}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  setStatus(`✓ saved <strong>${slug}.md</strong>`);
+}
+
+// ─── Clear ───────────────────────────────────────
+function clearAll() {
+  document.getElementById('title').value = '';
+  document.getElementById('date').value = '';
+  document.getElementById('editor').value = '';
+  document.getElementById('preview').innerHTML = '';
+  switchTab('editor');
+  setStatus('<span class="blink">_</span> cleared');
+}
+
+// ─── Init ────────────────────────────────────────
+document.getElementById('date').value = new Date().toISOString().slice(0, 10);
+updatePublishBtn();
+
+if (!getSettings().token) {
+  document.getElementById('status').innerHTML = '⚙ tap the gear icon to connect to GitHub';
+}
+</script>
+
+</body>
+</html>

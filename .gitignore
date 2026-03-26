@@ -1,0 +1,10 @@
+# Generated HTML (rebuilt by build.py / GitHub Actions)
+blog/index.html
+blog/posts/*.html
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
