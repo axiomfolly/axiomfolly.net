@@ -171,9 +171,10 @@ def page_wrapper(title: str, body_html: str, depth: int = 0) -> str:
 </style>
 </head>
 <body>
-<div style="position:relative;z-index:1;background:var(--bg)">
+<div class="content-wrap" style="position:relative;z-index:1;background:var(--bg)">
 {body_html}
 </div>
+<div style="height:150vh;position:relative;z-index:1;pointer-events:none"></div>
 <script src="{script_prefix}water.js"></script>
 <!-- holy smokes ma, is this done by AI? -->
 </body>

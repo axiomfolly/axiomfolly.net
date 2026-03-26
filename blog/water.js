@@ -13,9 +13,33 @@
   var animFrameId = null;
   var frame = 0;
   var mouse = { x: 0, y: 0, inWater: false, diveTime: 0, lastX: 0, lastY: 0, exitTime: 0 };
+  var diveDepth = 0;
+  var LAYER_OFFSETS = [160, 115, 75, 40];
 
   var COLORS = ["#00ff9f", "#00e5ff", "#b967ff", "#ff6ec7"];
   var DRIP_COLOR = "#b967ff";
+
+  var fishes = [];
+  var FISH_DEFS = [
+    { threshold: 0.40, yFrac: 0.5, speed: 0.35, size: 3, startDir: 1 },
+    { threshold: 0.50, yFrac: 0.7, speed: 0.5,  size: 2.5, startDir: -1 },
+    { threshold: 0.60, yFrac: 0.4, speed: 0.3,  size: 3.5, startDir: 1 },
+    { threshold: 0.70, yFrac: 0.8, speed: 0.45, size: 2, startDir: -1 },
+    { threshold: 0.78, yFrac: 0.6, speed: 0.55, size: 2.8, startDir: 1 }
+  ];
+  function makeFish(def) {
+    return {
+      x: def.startDir === 1 ? -50 : canvas.width + 50,
+      y: canvas.height * def.yFrac,
+      dir: def.startDir, speed: def.speed, size: def.size,
+      yFrac: def.yFrac, bobOffset: Math.random() * Math.PI * 2,
+      fishBubbles: [],
+      fleeing: false, fleeTimer: 0, fleeVx: 0, fleeVy: 0, circleAngle: 0,
+      spawned: false
+    };
+  }
+  var spikes = [];
+  var deepSpikes = [];
 
   function resize() {
     canvas.width = window.innerWidth;
@@ -41,6 +65,9 @@
         layer.points.push({ x: x, y: layer.baseY, velocity: 0, targetY: layer.baseY });
       }
     });
+
+    initSpikes();
+    fishes = [];
   }
 
   function updatePhysics(layer) {
@@ -267,6 +294,218 @@
     ctx.globalAlpha = 1;
   }
 
+  function initSpikes() {
+    spikes = [];
+    deepSpikes = [];
+    for (var i = 0; i < 60; i++) {
+      var x = Math.random() * canvas.width;
+      var h = 40 + Math.random() * 220;
+      var angle = (Math.random() - 0.5) * 1.2;
+      var w = 6 + Math.random() * 35;
+      var palette = [
+        "#000", "#000", "#000",
+        "#1a002a", "#2d004a", "#0a0020",
+        "#ff006e", "#b967ff", "#00ff9f",
+        "#ff0044", "#6600aa"
+      ];
+      var color = palette[Math.floor(Math.random() * palette.length)];
+      var glow = Math.random() > 0.7;
+      deepSpikes.push({
+        x: x, w: w, h: h, angle: angle,
+        jitter: Math.random() * Math.PI * 2,
+        speed: 0.005 + Math.random() * 0.02,
+        color: color, glow: glow,
+        segments: Math.floor(2 + Math.random() * 4),
+        twist: (Math.random() - 0.5) * 0.3,
+        depth: 0.3 + Math.random() * 0.7
+      });
+    }
+    deepSpikes.sort(function (a, b) { return a.depth - b.depth; });
+  }
+
+  function drawFish(px, py, dir, size, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(px, py);
+    ctx.scale(dir, 1);
+    var s = size;
+
+    ctx.fillStyle = "#00e5ff";
+    ctx.fillRect(-s * 3, -s, s * 6, s * 2);
+    ctx.fillRect(-s * 4, 0, s, s);
+    ctx.fillRect(s * 3, -s * 2, s, s);
+    ctx.fillRect(s * 3, s, s, s);
+
+    ctx.fillStyle = "#b967ff";
+    ctx.fillRect(-s * 5, -s, s, s * 2);
+    ctx.fillRect(-s * 6, -s * 2, s, s * 3);
+    ctx.fillRect(-s * 6, s, s, s);
+
+    ctx.fillStyle = "#ff6ec7";
+    ctx.fillRect(s, -s * 2, s * 2, s);
+    ctx.fillRect(0, s, s * 2, s);
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(s * 2, -s, s, s);
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(s * 2.3, -s * 0.7, s * 0.4, s * 0.4);
+
+    ctx.restore();
+  }
+
+  function updateOneFish(f) {
+    var pinkLayer = layers[layers.length - 1];
+    var pinkY = pinkLayer ? pinkLayer.baseY + 40 : canvas.height * 0.7;
+    var range = canvas.height - pinkY;
+    var baseY = pinkY + range * f.yFrac;
+    var parallaxShift = diveDepth * range * 0.15;
+    var restY = Math.max(baseY - parallaxShift, pinkY);
+    f.bobOffset += 0.015;
+    var bobY = Math.sin(f.bobOffset) * 8;
+
+    var dx = mouse.x - f.x;
+    var dy = mouse.y - (restY + bobY);
+    var dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (!f.fleeing && dist < 100 && mouse.x > 0) {
+      f.fleeing = true;
+      f.fleeTimer = 90;
+      f.circleAngle = Math.atan2(dy, dx);
+      var fleeSpeed = 4;
+      f.fleeVx = -Math.cos(f.circleAngle) * fleeSpeed;
+      f.fleeVy = -Math.sin(f.circleAngle) * fleeSpeed;
+      f.dir = f.fleeVx > 0 ? 1 : -1;
+    }
+
+    if (f.fleeing) {
+      f.fleeTimer--;
+      f.circleAngle += 0.06;
+      f.fleeVx += Math.cos(f.circleAngle) * 0.3;
+      f.fleeVy += Math.sin(f.circleAngle) * 0.2;
+      f.fleeVx *= 0.96;
+      f.fleeVy *= 0.96;
+      f.x += f.fleeVx;
+      f.y += f.fleeVy;
+      f.dir = f.fleeVx > 0 ? 1 : -1;
+
+      var fleeMinY = layers[layers.length - 1] ? layers[layers.length - 1].baseY + 40 : canvas.height * 0.7;
+      if (f.y < fleeMinY) { f.y = fleeMinY; f.fleeVy = Math.abs(f.fleeVy) * 0.5; }
+      if (f.fleeTimer <= 0) f.fleeing = false;
+
+      if (Math.random() < 0.15) {
+        f.fishBubbles.push({
+          x: f.x - f.dir * 20, y: f.y - 2,
+          vy: -0.5 - Math.random() * 0.6, vx: (Math.random() - 0.5) * 0.5,
+          radius: 1 + Math.random() * 3, opacity: 0.6 + Math.random() * 0.3,
+          wobble: Math.random() * Math.PI * 2
+        });
+      }
+    } else {
+      f.x += f.speed * f.dir;
+      f.y += (restY + bobY - f.y) * 0.05;
+
+      if (f.dir === 1 && f.x > canvas.width + 50) {
+        f.dir = -1;
+      } else if (f.dir === -1 && f.x < -50) {
+        f.dir = 1;
+      }
+
+      if (Math.random() < 0.03) {
+        f.fishBubbles.push({
+          x: f.x - f.dir * 20, y: f.y - 2,
+          vy: -0.3 - Math.random() * 0.4, vx: (Math.random() - 0.5) * 0.2,
+          radius: 1.5 + Math.random() * 2.5, opacity: 0.5 + Math.random() * 0.3,
+          wobble: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    f.fishBubbles = f.fishBubbles.filter(function (b) {
+      b.wobble += 0.03;
+      b.x += b.vx + Math.sin(b.wobble) * 0.15;
+      b.y += b.vy;
+      b.opacity -= 0.005;
+      return b.opacity > 0;
+    });
+  }
+
+  function drawFishBubbles(f, alpha) {
+    f.fishBubbles.forEach(function (b) {
+      ctx.globalAlpha = b.opacity * alpha;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = "#00e5ff";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDeepSpikes(scrollInY, alpha) {
+    if (deepSpikes.length === 0) return;
+    ctx.save();
+
+    for (var i = 0; i < deepSpikes.length; i++) {
+      var sp = deepSpikes[i];
+      var baseY = canvas.height + scrollInY;
+      var jitter = Math.sin(frame * sp.speed + sp.jitter);
+      var breathe = 1 + Math.sin(frame * sp.speed * 0.7 + sp.jitter) * 0.08;
+
+      ctx.save();
+      ctx.globalAlpha = alpha * sp.depth;
+      ctx.translate(sp.x, baseY);
+      ctx.rotate(sp.angle + jitter * 0.05);
+      ctx.scale(breathe, breathe);
+
+      var h = sp.h * sp.depth;
+      var w = sp.w * sp.depth;
+
+      if (sp.glow) {
+        ctx.shadowColor = sp.color;
+        ctx.shadowBlur = 15 + jitter * 5;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(-w / 2, 0);
+      var segs = sp.segments;
+      for (var s = 1; s <= segs; s++) {
+        var frac = s / segs;
+        var twist = Math.sin(frac * Math.PI + frame * sp.speed) * sp.twist * w;
+        var segW = (w / 2) * (1 - frac * 0.85);
+        if (s < segs) {
+          ctx.lineTo(twist - segW, -h * frac);
+          ctx.lineTo(twist + segW, -h * frac);
+        } else {
+          ctx.lineTo(twist, -h);
+        }
+      }
+      for (var s = segs - 1; s >= 1; s--) {
+        var frac = s / segs;
+        var twist = Math.sin(frac * Math.PI + frame * sp.speed) * sp.twist * w;
+        var segW = (w / 2) * (1 - frac * 0.85);
+        ctx.lineTo(twist + segW + 1, -h * frac);
+      }
+      ctx.lineTo(w / 2, 0);
+      ctx.closePath();
+
+      ctx.fillStyle = sp.color;
+      ctx.fill();
+
+      if (sp.depth > 0.6 && sp.color !== "#000") {
+        ctx.strokeStyle = sp.color;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.stroke();
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
   function handleMouseMove(e) {
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
@@ -383,6 +622,21 @@
 
   function animate() {
     frame += 1;
+
+    var scrollY = window.pageYOffset || 0;
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    diveDepth = maxScroll > 0 ? scrollY / maxScroll : 0;
+
+    var shift = diveDepth * canvas.height * 1.4;
+    var base = canvas.height - 120;
+    for (var i = 0; i < layers.length; i++) {
+      var newBaseY = base - LAYER_OFFSETS[i] + 120 - shift;
+      layers[i].baseY = newBaseY;
+      for (var j = 0; j < layers[i].points.length; j++) {
+        layers[i].points[j].targetY = newBaseY;
+      }
+    }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     var midUpper = layers[1];
@@ -425,6 +679,39 @@
 
     updateSplashes();
     drawSplashes();
+
+    for (var fi = 0; fi < FISH_DEFS.length; fi++) {
+      var def = FISH_DEFS[fi];
+      if (diveDepth > def.threshold) {
+        if (!fishes[fi]) fishes[fi] = makeFish(def);
+        var f = fishes[fi];
+        updateOneFish(f);
+        var alpha = Math.min((diveDepth - def.threshold) * 4, 1);
+        drawFishBubbles(f, alpha);
+        drawFish(f.x, f.y, f.dir, f.size, alpha);
+      }
+    }
+
+    var spikeThreshold = 0.85;
+    if (diveDepth > spikeThreshold) {
+      var spikeProg = (diveDepth - spikeThreshold) / (1 - spikeThreshold);
+      var spikeAlpha = Math.min(spikeProg * 2, 1);
+      var scrollInY = (1 - spikeProg) * 300;
+      drawDeepSpikes(scrollInY, spikeAlpha);
+    }
+
+    if (diveDepth > 0) {
+      var darkness = Math.min(diveDepth * 1.8, 0.8);
+      var darkTop = layers[0].baseY;
+      if (darkTop < canvas.height) {
+        var grad = ctx.createLinearGradient(0, darkTop, 0, canvas.height);
+        grad.addColorStop(0, "rgba(5, 0, 20, 0)");
+        grad.addColorStop(0.15, "rgba(5, 0, 20, " + (darkness * 0.3) + ")");
+        grad.addColorStop(1, "rgba(5, 0, 20, " + darkness + ")");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, darkTop, canvas.width, canvas.height - darkTop);
+      }
+    }
 
     if (mouse.inWater) {
       mouse.diveTime += 1;
