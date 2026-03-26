@@ -602,7 +602,6 @@
   }
 
   function handleTouchStart(e) {
-    e.preventDefault();
     var touch = e.touches[0];
     if (!touch) return;
     var rect = canvas.getBoundingClientRect();
@@ -614,7 +613,6 @@
   }
 
   function handleTouchMove(e) {
-    e.preventDefault();
     var touch = e.touches[0];
     if (!touch) return;
     handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY, target: canvas });
@@ -734,8 +732,8 @@
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("click", handleClick);
   canvas.addEventListener("mouseleave", handleMouseLeave);
-  canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
-  canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+  canvas.addEventListener("touchstart", handleTouchStart, { passive: true });
+  canvas.addEventListener("touchmove", handleTouchMove, { passive: true });
   canvas.addEventListener("touchend", handleMouseLeave);
 
   window.addEventListener("resize", resize);
