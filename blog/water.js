@@ -31,7 +31,7 @@
       { points: [], baseY: base - 80, fillColor: COLORS[0], strokeColor: COLORS[0], lineWidth: 1.5, tension: 0.008, dampening: 0.06, spread: 0.15, depthFactor: 0.3, waveOffset: 0, waveSpeed: 5e-4, opacity: 0.7 },
       { points: [], baseY: base - 40, fillColor: COLORS[1], strokeColor: COLORS[1], lineWidth: 1.8, tension: 0.01, dampening: 0.055, spread: 0.18, depthFactor: 0.5, waveOffset: Math.PI / 3, waveSpeed: 8e-4, opacity: 0.8 },
       { points: [], baseY: base, fillColor: COLORS[2], strokeColor: COLORS[2], lineWidth: 2, tension: 0.012, dampening: 0.05, spread: 0.2, depthFactor: 0.7, waveOffset: Math.PI / 2, waveSpeed: 0.001, opacity: 0.9 },
-      { points: [], baseY: base + 50, fillColor: COLORS[3], strokeColor: COLORS[3], lineWidth: 2.5, tension: 0.015, dampening: 0.045, spread: 0.22, depthFactor: 1, waveOffset: Math.PI, waveSpeed: 0.0012, opacity: 1 }
+      { points: [], baseY: base + 50, fillColor: COLORS[3], strokeColor: COLORS[3], lineWidth: 2.5, tension: 0.015, dampening: 0.045, spread: 0.22, depthFactor: 1, waveOffset: Math.PI, waveSpeed: 0.0012, opacity: 0.65 }
     ];
 
     layers.forEach(function (layer) {
@@ -218,7 +218,7 @@
   }
 
   function spawnSplash(x, y, speed) {
-    var front = layers[layers.length - 1];
+    var mid = layers[2];
     var count = Math.min(Math.floor(speed * 2) + 2, 8);
     for (var i = 0; i < count; i++) {
       var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.6;
@@ -231,19 +231,19 @@
         length: Math.min(speed * 3, 12) + Math.random() * 3,
         thickness: Math.max(1.5, 3 - speed * 0.2),
         opacity: 0.7 + Math.random() * 0.2,
-        color: front.fillColor
+        color: COLORS[Math.floor(Math.random() * COLORS.length)]
       });
     }
   }
 
   function updateSplashes() {
-    var front = layers[layers.length - 1];
+    var mid = layers[1];
     splashes = splashes.filter(function (s) {
       s.vy += 0.3;
       s.x += s.vx;
       s.y += s.vy;
       s.vx *= 0.99;
-      var surfY = getSurfaceY(s.x, front);
+      var surfY = getSurfaceY(s.x, mid);
       if (s.y > surfY) return false;
       s.opacity -= 0.008;
       return s.opacity > 0 && s.y < canvas.height;
@@ -271,8 +271,9 @@
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
     var my = e.clientY - rect.top;
-    var front = layers[layers.length - 1];
-    var threshold = front.baseY - 20;
+    var midUpper = layers[1];
+    var midLower = layers[2];
+    var threshold = midUpper.baseY - 20;
     var wasInWater = mouse.inWater;
     var isInWater = my >= threshold;
 
@@ -288,7 +289,7 @@
       var dx = mx - mouse.lastX;
       var dy = my - mouse.lastY;
       var speed = Math.sqrt(dx * dx + dy * dy);
-      var surfY = getSurfaceY(mx, front);
+      var surfY = getSurfaceY(mx, midUpper);
       spawnSplash(mx, surfY, Math.min(speed / 5, 4));
     }
 
@@ -297,7 +298,7 @@
       var dx = mx - mouse.lastX;
       var dy = my - mouse.lastY;
       var speed = Math.sqrt(dx * dx + dy * dy);
-      var surfY = getSurfaceY(mx, front);
+      var surfY = getSurfaceY(mx, midUpper);
       spawnSplash(mx, surfY, Math.min(speed / 4, 5));
     }
 
@@ -321,17 +322,19 @@
       return;
     }
 
-    var pts = front.points;
-    var baseY = front.baseY;
-    var depth = Math.max(0, my - baseY);
-    var depthFactor = Math.max(0, 1 - depth / 200);
-    var depthSq = depthFactor * depthFactor;
+    for (var li = 1; li <= 2; li++) {
+      var layer = layers[li];
+      var pts = layer.points;
+      var depth = Math.max(0, my - layer.baseY);
+      var depthFactor = Math.max(0, 1 - depth / 200);
+      var depthSq = depthFactor * depthFactor;
 
-    for (var i = 0; i < pts.length; i++) {
-      var dist = Math.abs(pts[i].x - mx);
-      if (dist < 150) {
-        var force = (150 - dist) / 150 * (my - pts[i].y) * 0.025 * (0.1 + depthSq * 0.9);
-        pts[i].velocity += force;
+      for (var i = 0; i < pts.length; i++) {
+        var dist = Math.abs(pts[i].x - mx);
+        if (dist < 150) {
+          var force = (150 - dist) / 150 * (my - pts[i].y) * 0.025 * (0.1 + depthSq * 0.9);
+          pts[i].velocity += force;
+        }
       }
     }
   }
@@ -340,15 +343,16 @@
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
     var my = e.clientY - rect.top;
-    var front = layers[layers.length - 1];
-    if (my < front.baseY - 20) return;
+    if (my < layers[1].baseY - 20) return;
 
-    var pts = front.points;
-    for (var i = 0; i < pts.length; i++) {
-      var dist = Math.abs(pts[i].x - mx);
-      if (dist < 200) {
-        var force = 200 - dist;
-        pts[i].velocity -= force / 200 * 10;
+    for (var li = 1; li <= 2; li++) {
+      var pts = layers[li].points;
+      for (var i = 0; i < pts.length; i++) {
+        var dist = Math.abs(pts[i].x - mx);
+        if (dist < 200) {
+          var force = 200 - dist;
+          pts[i].velocity -= force / 200 * 10;
+        }
       }
     }
   }
@@ -381,26 +385,44 @@
     frame += 1;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    var front = layers[layers.length - 1];
+    var midUpper = layers[1];
+    var midLower = layers[2];
 
-    for (var r = layers.length - 2; r >= 0; r--) {
-      var back = layers[r];
-      var coupling = 0.15 * (r + 1) / layers.length;
-      for (var n = 0; n < back.points.length && n < front.points.length; n++) {
-        var frontDisp = front.points[n].y - front.baseY;
-        var backDisp = back.points[n].y - back.baseY;
-        var diff = frontDisp - backDisp;
-        back.points[n].velocity += diff * coupling * 0.02;
+    var outerPairs = [
+      { source: midUpper, target: layers[0], strength: 0.45 },
+      { source: midLower, target: layers[3], strength: 0.45 }
+    ];
+    outerPairs.forEach(function (pair) {
+      var src = pair.source;
+      var tgt = pair.target;
+      for (var n = 0; n < tgt.points.length && n < src.points.length; n++) {
+        var srcDisp = src.points[n].y - src.baseY;
+        var tgtDisp = tgt.points[n].y - tgt.baseY;
+        var diff = srcDisp - tgtDisp;
+        tgt.points[n].velocity += diff * pair.strength * 0.02;
       }
-    }
-
-    layers.forEach(function (layer, idx) {
-      updatePhysics(layer);
-      drawLayer(layer, idx === layers.length - 1);
     });
 
-    updateBubbles(function (x) { return getSurfaceY(x, front); });
+    var crossCoupling = 0.15;
+    for (var n = 0; n < midUpper.points.length && n < midLower.points.length; n++) {
+      var upperDisp = midUpper.points[n].y - midUpper.baseY;
+      var lowerDisp = midLower.points[n].y - midLower.baseY;
+      var diff = upperDisp - lowerDisp;
+      midLower.points[n].velocity += diff * crossCoupling * 0.02;
+      midUpper.points[n].velocity -= diff * crossCoupling * 0.01;
+    }
+
+    layers.forEach(function (layer) { updatePhysics(layer); });
+
+    for (var i = 0; i < layers.length - 1; i++) {
+      drawLayer(layers[i], false);
+    }
+
+    updateBubbles(function (x) { return getSurfaceY(x, midLower); });
     drawBubbles();
+
+    drawLayer(layers[layers.length - 1], true);
+
     updateSplashes();
     drawSplashes();
 

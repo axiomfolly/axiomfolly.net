@@ -165,6 +165,7 @@ def page_wrapper(title: str, body_html: str, depth: int = 0) -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title>
+<link rel="icon" type="image/svg+xml" href="{script_prefix}favicon.svg">
 <style>
 {CSS_TEXT}
 </style>
@@ -199,7 +200,7 @@ def build_index(posts: list[dict]) -> str:
 {items}
 </ul>
 
-<footer>{BLOG_TITLE} &copy; {datetime.now().year} <span class="blink">_</span></footer>
+<footer>{BLOG_TITLE} &copy; <script>document.write(new Date().getFullYear())</script> <span class="blink">_</span></footer>
 """
     return page_wrapper(f"{BLOG_TITLE} - {BLOG_SUB}", body, depth=0)
 
@@ -214,7 +215,7 @@ def build_post(p: dict) -> str:
   {p['html']}
 </article>
 
-<footer>{BLOG_TITLE} <span class="blink">_</span></footer>
+<footer>{BLOG_TITLE} &copy; <script>document.write(new Date().getFullYear())</script> <span class="blink">_</span></footer>
 """
     return page_wrapper(p['title'], body, depth=1)
 
