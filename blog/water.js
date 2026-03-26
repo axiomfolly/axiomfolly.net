@@ -1,7 +1,7 @@
 (function () {
   var canvas = document.createElement("canvas");
   canvas.style.cssText =
-    "position:fixed;inset:0;width:100%;height:100%;z-index:0;touch-action:pan-y";
+    "position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none";
   document.body.appendChild(canvas);
 
   var ctx = canvas.getContext("2d");
@@ -507,9 +507,8 @@
   }
 
   function handleMouseMove(e) {
-    var rect = canvas.getBoundingClientRect();
-    var mx = e.clientX - rect.left;
-    var my = e.clientY - rect.top;
+    var mx = e.clientX || 0;
+    var my = e.clientY || 0;
     var midUpper = layers[1];
     var midLower = layers[2];
     var threshold = midUpper.baseY - 20;
@@ -579,9 +578,8 @@
   }
 
   function handleClick(e) {
-    var rect = canvas.getBoundingClientRect();
-    var mx = e.clientX - rect.left;
-    var my = e.clientY - rect.top;
+    var mx = e.clientX || 0;
+    var my = e.clientY || 0;
     if (my < layers[1].baseY - 20) return;
 
     for (var li = 1; li <= 2; li++) {
@@ -604,9 +602,8 @@
   function handleTouchStart(e) {
     var touch = e.touches[0];
     if (!touch) return;
-    var rect = canvas.getBoundingClientRect();
-    mouse.x = touch.clientX - rect.left;
-    mouse.y = touch.clientY - rect.top;
+    mouse.x = touch.clientX;
+    mouse.y = touch.clientY;
     mouse.lastX = mouse.x;
     mouse.lastY = mouse.y;
     handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY, target: canvas });
@@ -729,12 +726,12 @@
     setTimeout(randomPoke, delay);
   }
 
-  canvas.addEventListener("mousemove", handleMouseMove);
-  canvas.addEventListener("click", handleClick);
-  canvas.addEventListener("mouseleave", handleMouseLeave);
-  canvas.addEventListener("touchstart", handleTouchStart, { passive: true });
-  canvas.addEventListener("touchmove", handleTouchMove, { passive: true });
-  canvas.addEventListener("touchend", handleMouseLeave);
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("click", handleClick);
+  document.addEventListener("mouseleave", handleMouseLeave);
+  document.addEventListener("touchstart", handleTouchStart, { passive: true });
+  document.addEventListener("touchmove", handleTouchMove, { passive: true });
+  document.addEventListener("touchend", handleMouseLeave);
 
   window.addEventListener("resize", resize);
   resize();
