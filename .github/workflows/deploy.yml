@@ -4,10 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'blog/posts/*.md'
-      - 'blog/build.py'
-      - 'blog/style.css'
-      - 'blog/admin.html'
+      - 'blog/**'
   workflow_dispatch:
 
 permissions:
