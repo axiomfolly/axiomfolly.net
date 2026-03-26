@@ -12,8 +12,8 @@ from pathlib import Path
 from datetime import datetime
 
 # ─── Config ────────────────────────────────────────────────────
-BLOG_TITLE   = "BLOG"
-BLOG_SUB     = "a minimal 8-bit journal"
+BLOG_TITLE   = "AXIOM FOLLY"
+BLOG_SUB     = "something something"
 POSTS_DIR    = Path("posts")
 OUTPUT_DIR   = Path(".")         # index.html lives at root
 POST_OUT_DIR = Path("posts")     # posts/slug.html alongside .md
@@ -157,7 +157,8 @@ def parse_post(filepath: Path) -> dict | None:
 CSS_TEXT = Path("style.css").read_text(encoding='utf-8') if Path("style.css").exists() else ""
 
 # ─── HTML Templates ──────────────────────────────────────────
-def page_wrapper(title: str, body_html: str) -> str:
+def page_wrapper(title: str, body_html: str, depth: int = 0) -> str:
+    script_prefix = "../" * depth
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,7 +170,11 @@ def page_wrapper(title: str, body_html: str) -> str:
 </style>
 </head>
 <body>
+<div style="position:relative;z-index:1;background:var(--bg)">
 {body_html}
+</div>
+<script src="{script_prefix}water.js"></script>
+<!-- holy smokes ma, is this done by AI? -->
 </body>
 </html>"""
 
@@ -196,7 +201,7 @@ def build_index(posts: list[dict]) -> str:
 
 <footer>{BLOG_TITLE} &copy; {datetime.now().year} <span class="blink">_</span></footer>
 """
-    return page_wrapper(BLOG_TITLE, body)
+    return page_wrapper(f"{BLOG_TITLE} - {BLOG_SUB}", body, depth=0)
 
 
 def build_post(p: dict) -> str:
@@ -211,7 +216,7 @@ def build_post(p: dict) -> str:
 
 <footer>{BLOG_TITLE} <span class="blink">_</span></footer>
 """
-    return page_wrapper(p['title'], body)
+    return page_wrapper(p['title'], body, depth=1)
 
 
 # ─── Build ────────────────────────────────────────────────────
@@ -235,6 +240,18 @@ def main():
         out = POST_OUT_DIR / f"{p['slug']}.html"
         out.write_text(build_post(p), encoding='utf-8')
         print(f"  ✓ posts/{p['slug']}.html")
+
+    # write sitemap
+    site = "https://axiomfolly.net"
+    urls = [f"  <url><loc>{site}/</loc></url>"]
+    for p in posts:
+        urls.append(f"  <url><loc>{site}/posts/{p['slug']}.html</loc><lastmod>{p['date']}</lastmod></url>")
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{chr(10).join(urls)}
+</urlset>"""
+    (OUTPUT_DIR / "sitemap.xml").write_text(sitemap, encoding='utf-8')
+    print("✓ sitemap.xml")
 
     print("\nDone! Open index.html in your browser.")
 

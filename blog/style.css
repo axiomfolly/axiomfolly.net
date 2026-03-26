@@ -1,5 +1,5 @@
 /* ========================================
-   8-BIT BLOG — Full Pixel Art Theme
+   Like wow, this looks like a blog of some sorts
    ======================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -29,7 +29,7 @@ body {
   color: var(--fg);
   max-width: 420px;
   margin: 0 auto;
-  padding: 32px 16px 64px;
+  padding: 32px 16px 200px;
 }
 
 /* ---- pixel border utility ---- */
@@ -286,7 +286,7 @@ footer::before {
   font-size: 4px;
 }
 
-/* ---- scanline overlay (subtle) ---- */
+/* ---- scanline overlay ---- */
 body::after {
   content: '';
   position: fixed;
@@ -306,7 +306,7 @@ body::after {
   z-index: 9999;
 }
 
-/* ---- cursor blink for fun ---- */
+/* ---- cursor blink ---- */
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
