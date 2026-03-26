@@ -1,7 +1,7 @@
 (function () {
   var canvas = document.createElement("canvas");
   canvas.style.cssText =
-    "position:fixed;inset:0;width:100%;height:100%;z-index:0;touch-action:none";
+    "position:fixed;inset:0;width:100%;height:100%;z-index:0;touch-action:pan-y";
   document.body.appendChild(canvas);
 
   var ctx = canvas.getContext("2d");
